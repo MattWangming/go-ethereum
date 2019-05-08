@@ -53,7 +53,7 @@ func TestListLocalAccount(t *testing.T) {
 func TestRecoverAccount(t *testing.T) {
 	usr, _ := user.Current()
 	rootDir := usr.HomeDir
-	name := "cm2"
+	name := "easyzone"
 	password := "wm131421"
 	seed := "fence shell flame stove zebra occur hurry steel drip gather debate tuition crumble cigar hood swarm unaware plunge lake artist snack skate between police"
 	output := RecoverAccount(rootDir,name,password,seed)
