@@ -1,6 +1,7 @@
 package sdksource
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
@@ -18,6 +19,7 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tyler-smith/go-bip39"
+	"log"
 	"path/filepath"
 	"strings"
 )
@@ -302,4 +304,52 @@ func errMissingPassword() error {
 
 func errKeyNameConflict(name string) error {
 	return fmt.Errorf("acount with name %s already exists", name)
+}
+
+//verify the signature
+func SigVerify(rootDir,name,password string, data2sign []byte) {
+	//Fetch the privateKey
+	privateKey, err := FetchtoSign(rootDir,name,password)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+
+	//data to be signed
+	//data := []byte("hello")
+	hash := crypto.Keccak256Hash(data2sign)
+
+	//generate the signature
+	signature, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//recover the pubkey from signature
+	sigPublicKey, err := crypto.Ecrecover(hash.Bytes(), signature)
+	if err != nil {
+		log.Fatal(err)
+	}
+	matches := bytes.Equal(sigPublicKey, publicKeyBytes)
+	fmt.Println("sigPublicKey vs publicKeyBytes", matches) // true
+
+
+	sigPublicKeyECDSA, err := crypto.SigToPub(hash.Bytes(), signature)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sigPublicKeyBytes := crypto.FromECDSAPub(sigPublicKeyECDSA)
+	matches = bytes.Equal(sigPublicKeyBytes, publicKeyBytes)
+	fmt.Println("sigPublicKeyBytes vs publicKeyBytes", matches) // true
+
+	signatureNoRecoverID := signature[:len(signature)-1] // remove recovery id
+	verified := crypto.VerifySignature(publicKeyBytes, hash.Bytes(), signatureNoRecoverID)
+	fmt.Println("no recover verify", verified) // true
+
 }

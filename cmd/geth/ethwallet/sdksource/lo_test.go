@@ -71,3 +71,13 @@ func TestFetchtoSign(t *testing.T) {
 	}
 	t.Log(output)
 }
+
+
+func TestSigVerify(t *testing.T) {
+	usr, _ := user.Current()
+	rootDir := usr.HomeDir
+	name := "cm1"
+	password := "wm131421"
+	data2sign := []byte("hello")
+	SigVerify(rootDir,name,password,data2sign)
+}
