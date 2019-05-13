@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
+
 	"github.com/cosmos/cosmos-sdk/crypto/keys/keyerror"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -72,14 +73,15 @@ func CreateAccount(rootDir, name, password, mnemonic string) string {
 	//convert mnemonic string to seed byte
 	seed := bip39.NewSeed(mnemonic, "")
 
-	//dpath for the key derive: m/44'/coin_type'/account'
-	dpath, err := accounts.ParseDerivationPath(`m/44'/60'/0'/0`)
+	//dpath for the key base path derive:  m / purpose' / coin_type' / account' / change / address_index (m/44'/60'/0'/0/0)
+	dpath, err := accounts.ParseDerivationPath(`m/44'/60'/0'/0/0`)
 	if err != nil {
 		return err.Error()
 	}
 
 	//fetch the masterKey for the wallet
 	masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
+	//masterKey, err := bip32.NewMasterKey(seed)
 	if err != nil {
 		return err.Error()
 	}
@@ -139,28 +141,29 @@ func CreateAccount(rootDir, name, password, mnemonic string) string {
 	if err != nil {
 		return err.Error()
 	}
+	//Do not check whether the name conflict with existing names
 	// List returns the keys from storage in alphabetical order.
-	var res []LocalInfo
-	iter := db.Iterator(nil, nil)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		key := string(iter.Key())
-		// need to include only keys in storage that have an info suffix
-		if strings.HasSuffix(key, infoSuffix) {
-			info, err := readInfo(iter.Value())
-			if err != nil {
-				return err.Error()
-			}
-			res = append(res, info)
-		}
-	}
-	// check if already exists
-	for _, info := range res {
-		if info.Name == name {
-			err = errKeyNameConflict(name)
-			return err.Error()
-		}
-	}
+	//var res []LocalInfo
+	//iter := db.Iterator(nil, nil)
+	//defer iter.Close()
+	//for ; iter.Valid(); iter.Next() {
+	//	key := string(iter.Key())
+	//	// need to include only keys in storage that have an info suffix
+	//	if strings.HasSuffix(key, infoSuffix) {
+	//		info, err := readInfo(iter.Value())
+	//		if err != nil {
+	//			return err.Error()
+	//		}
+	//		res = append(res, info)
+	//	}
+	//}
+	//// check if already exists
+	//for _, info := range res {
+	//	if info.Name == name {
+	//		err = errKeyNameConflict(name)
+	//		return err.Error()
+	//	}
+	//}
 
 	db.SetSync(key1,serializeInfo)
 	// store a pointer to the infokey by address for fast lookup
